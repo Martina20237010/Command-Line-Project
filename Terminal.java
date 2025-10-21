@@ -1,6 +1,7 @@
 import java.util.Arrays;
 import java.util.Scanner;
-import java.io.File;
+import java.io.*;
+import java.util.zip.*;
 
 class Parser {
     String commandName;
@@ -130,7 +131,7 @@ public class Terminal {
 
         if ( argument.equals("*") ) {
 
-            File currentDir = new File(currentPath);
+           File currentDir = currentdir;
             // puts all directories in current directory in  a list
             File[] subDirs = currentDir.listFiles(File::isDirectory);
 
@@ -165,7 +166,7 @@ public class Terminal {
             dir = new File(argument);
         } else {
             // if no path given (short path) consider it the current working path
-            dir = new File(currentPath, argument);
+            dir = new File(currentdir, argument);
         }
 
         // checks if directory exists
@@ -240,7 +241,7 @@ public class Terminal {
             return;
         }
         String filename = args[0];
-        File file = new File(currentPath, filename);
+        File file = new File(currentdir, filename);
         // check if file exists to remove it
         if ( !file.exists() ){
             System.out.println("Error: " + filename + " file not found");
@@ -261,8 +262,70 @@ public class Terminal {
             System.out.println("Failed to delete file: " + filename );
         }
     }
+    
+    public void cat(String[] args) {
+        if (args.length == 0) {
+            System.out.println("Please enter at least one file name");
+            return;
+        }
 
-    public void chooseCommandAction() {
+        for (String filename : args) {
+            File file = new File(pwd() + File.separator + filename);
+            if (!file.exists()) {
+                System.out.println("File does not exist: " + filename);
+                continue;
+            }
+            try (Scanner s = new Scanner(file)) {
+                while (s.hasNextLine()) {
+                    System.out.println(s.nextLine());
+                }
+            } catch (FileNotFoundException e) {
+                System.out.println("Error opening file: " + filename);
+            }
+        }
+    }
+
+    public void zip() {
+    // Get the class name and assume it's the current Java file
+    String sourceFileName = "Terminal.java";
+    String zipFileName = "Terminal.zip";
+
+    File sourceFile = new File(currentdir, sourceFileName);
+
+    if (!sourceFile.exists()) {
+        System.out.println("Error: File not found - " + sourceFile.getAbsolutePath());
+        return;
+    }
+
+    try (
+        FileOutputStream fos = new FileOutputStream(new File(currentdir, zipFileName));
+        ZipOutputStream zos = new ZipOutputStream(fos);
+        FileInputStream fis = new FileInputStream(sourceFile)
+    ) {
+        ZipEntry zipEntry = new ZipEntry(sourceFile.getName());
+        zos.putNextEntry(zipEntry);
+
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = fis.read(buffer)) > 0) {
+            zos.write(buffer, 0, length);
+        }
+
+        zos.closeEntry();
+        System.out.println("File zipped successfully to: " + zipFileName);
+
+    } catch (IOException e) {
+        System.out.println("Error while zipping: " + e.getMessage());
+    }
+}
+
+    
+
+   
+      
+
+    public void chooseCommandAction()
+    {
         String command = parser.getCommandName();
         String[] args = parser.getArgs();
 
@@ -299,39 +362,23 @@ public class Terminal {
                 touch();
                 break;
                 
+            case "zip":
+                 zip();
+                 break;
+                
             default:
                 System.out.println("There is no such command, please try again!");
                 break;
         }
     }
 
-    public void cat(String[] args) {
-        if (args.length == 0) {
-            System.out.println("Please enter at least one file name");
-            return;
-        }
-
-        for (String filename : args) {
-            File file = new File(pwd() + File.separator + filename);
-            if (!file.exists()) {
-                System.out.println("File does not exist: " + filename);
-                continue;
-            }
-            try (Scanner s = new Scanner(file)) {
-                while (s.hasNextLine()) {
-                    System.out.println(s.nextLine());
-                }
-            } catch (FileNotFoundException e) {
-                System.out.println("Error opening file: " + filename);
-            }
-        }
-    }
 
     public static void main(String[] args) {
         Terminal terminal = new Terminal();
         Scanner scanner = new Scanner(System.in);
 
-        while (true) {
+        while (true)  
+        {
             System.out.print("Enter command: ");
             String command = scanner.nextLine();
 
@@ -342,5 +389,5 @@ public class Terminal {
         }
 
     }
-}
 
+   }
